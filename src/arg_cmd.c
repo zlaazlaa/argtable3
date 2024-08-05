@@ -129,6 +129,21 @@ void arg_cmd_uninit(void) {
     arg_hashtable_destroy(s_hashtable, 1);
 }
 
+arg_cmd_info_t* cmd_search(const char *name) {
+	if (arg_hashtable_search(s_hashtable, name)) {
+		return (arg_cmd_info_t*)arg_hashtable_search(s_hashtable, name);
+	}
+	return NULL;
+}
+
+int exec_cmd(const char *name, int argc, char* argv[], arg_dstr_t res) {
+	arg_cmd_info_t* cmd_info = cmd_search(name);
+	if (cmd_info) {
+		return cmd_info->proc(argc, argv, res);
+	}
+	return -1;
+}
+
 void arg_cmd_register(const char* name, arg_cmdfn* proc, const char* description) {
     arg_cmd_info_t* cmd_info;
     size_t slen_name;

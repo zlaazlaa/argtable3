@@ -58,20 +58,14 @@ int mymain(int l, int R, int k,
     return 0;
     }
 
-
-int main(int argc, char **argv)
-    {
-    struct arg_lit  *list    = arg_lit0("lL",NULL,                      "list files");
-    struct arg_lit  *recurse = arg_lit0("R",NULL,                       "recurse through subdirectories");
-    struct arg_int  *repeat  = arg_int0("k","scalar",NULL,              "define scalar value k (default is 3)");
-    struct arg_str  *defines = arg_strn("D","define","MACRO",0,argc+2,  "macro definitions");
-    struct arg_file *outfile = arg_file0("o",NULL,"<output>",           "output file (default is \"-\")");
-    struct arg_lit  *verbose = arg_lit0("v","verbose,debug",            "verbose messages");
+int cmd_handler(int argc, char* argv[], arg_dstr_t res)
+{
     struct arg_lit  *help    = arg_lit0(NULL,"help",                    "print this help and exit");
     struct arg_lit  *version = arg_lit0(NULL,"version",                 "print version information and exit");
-    struct arg_file *infiles = arg_filen(NULL,NULL,NULL,1,argc+2,       "input file(s)");
+    struct arg_int  *a  = arg_int0("a","add_a",NULL,              "add_a");
+	struct arg_int  *b  = arg_int0("b","add_b",NULL,              "add_b");
     struct arg_end  *end     = arg_end(20);
-    void* argtable[] = {list,recurse,repeat,defines,outfile,verbose,help,version,infiles,end};
+    void* argtable[] = {help,version,a,b,end};
     const char* progname = "myprog";
     int nerrors;
     int exitcode=0;
@@ -85,23 +79,13 @@ int main(int argc, char **argv)
         goto exit;
         }
 
-    /* set any command line default values prior to parsing */
-    repeat->ival[0]=3;
-    outfile->filename[0]="-";
-
     /* Parse the command line as defined by argtable[] */
     nerrors = arg_parse(argc,argv,argtable);
 
     /* special case: '--help' takes precedence over error reporting */
     if (help->count > 0)
         {
-        printf("Usage: %s", progname);
-        arg_print_syntax(stdout,argtable,"\n");
-        printf("This program demonstrates the use of the argtable2 library\n");
-        printf("for parsing command line arguments. Argtable accepts integers\n");
-        printf("in decimal (123), hexadecimal (0xff), octal (0o123) and binary\n");
-        printf("(0b101101) formats. Suffixes KB, MB and GB are also accepted.\n");
-        arg_print_glossary(stdout,argtable,"  %-25s %s\n");
+        printf("Help: %s\n", "Help text");
         exitcode=0;
         goto exit;
         }
@@ -109,8 +93,7 @@ int main(int argc, char **argv)
     /* special case: '--version' takes precedence error reporting */
     if (version->count > 0)
         {
-        printf("'%s' example program for the \"argtable\" command line argument parser.\n",progname);
-        printf("September 2003, Stewart Heitmann\n");
+        printf("Version: %s\n", "v0.0.1");
         exitcode=0;
         goto exit;
         }
@@ -133,15 +116,24 @@ int main(int argc, char **argv)
         goto exit;
         }
 
-    /* normal case: take the command line options at face value */
-    exitcode = mymain(list->count, recurse->count, repeat->ival[0],
-                      defines->sval, defines->count,
-                      outfile->filename[0], verbose->count,
-                      infiles->filename, infiles->count);
+	if (a->count > 0 && b->count > 0) {
+		printf("a + b = %d\n", a->ival[0] + b->ival[0]);
+	}
 
     exit:
     /* deallocate each non-null entry in argtable[] */
     arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
 
     return exitcode;
-    }
+}
+
+int main(int argc, char **argv)
+{
+	const char* name = "test_cmd";
+	const char* description = "test cmd description.";
+	arg_cmd_init();
+	arg_cmd_register(name, cmd_handler, description);
+	if (argc > 1) {
+		exec_cmd(argv[1], argc - 1, &argv[1], NULL);
+	}
+}
